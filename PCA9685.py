@@ -22,7 +22,8 @@
 # THE SOFTWARE.
 
 from microbit import sleep, i2c
-import math, ustruct
+from ustruct import unpack
+#from math import floor
 
 # Registers/etc:
 PCA9685_ADDRESS    = 0x40
@@ -63,37 +64,37 @@ class PCA9685(object):
         sleep(5)  # wait for oscillator
         i2c.write(self.address, bytearray([MODE1])) # write register we want to read from first
         mode1 = i2c.read(self.address, 1)
-        mode1 = ustruct.unpack('<H', mode1)[0]
+        mode1 = unpack('<H', mode1)[0]
         mode1 = mode1 & ~SLEEP  # wake up (reset sleep)
         i2c.write(self.address, bytearray([MODE1, mode1]))
         sleep(5)  # wait for oscillator
 
-    def set_pwm_freq(self, freq_hz):
-        """Set the PWM frequency to the provided value in hertz."""
-        prescaleval = 25000000.0    # 25MHz
-        prescaleval /= 4096.0       # 12-bit
-        prescaleval /= float(freq_hz)
-        prescaleval -= 1.0
-        # print('Setting PWM frequency to {0} Hz'.format(freq_hz))
-        # print('Estimated pre-scale: {0}'.format(prescaleval))
-        prescale = int(math.floor(prescaleval + 0.5))
-        # print('Final pre-scale: {0}'.format(prescale))
-        i2c.write(self.address, bytearray([MODE1])) # write register we want to read from first
-        oldmode = i2c.read(self.address, 1)
-        oldmode = ustruct.unpack('<H', oldmode)[0]
-        newmode = (oldmode & 0x7F) | 0x10    # sleep
-        i2c.write(self.address, bytearray([MODE1, newmode]))  # go to sleep
-        i2c.write(self.address, bytearray([PRESCALE, prescale]))
-        i2c.write(self.address, bytearray([MODE1, oldmode]))
-        sleep(5)
-        i2c.write(self.address, bytearray([MODE1, oldmode | 0x80]))
+#    def set_pwm_freq(self, freq_hz):
+#        """Set the PWM frequency to the provided value in hertz."""
+#        prescaleval = 25000000.0    # 25MHz
+#        prescaleval /= 4096.0       # 12-bit
+#        prescaleval /= float(freq_hz)
+#        prescaleval -= 1.0
+#        # print('Setting PWM frequency to {0} Hz'.format(freq_hz))
+#        # print('Estimated pre-scale: {0}'.format(prescaleval))
+#        prescale = int(floor(prescaleval + 0.5))
+#        # print('Final pre-scale: {0}'.format(prescale))
+#        i2c.write(self.address, bytearray([MODE1])) # write register we want to read from first
+#        oldmode = i2c.read(self.address, 1)
+#        oldmode = unpack('<H', oldmode)[0]
+#        newmode = (oldmode & 0x7F) | 0x10    # sleep
+#        i2c.write(self.address, bytearray([MODE1, newmode]))  # go to sleep
+#        i2c.write(self.address, bytearray([PRESCALE, prescale]))
+#        i2c.write(self.address, bytearray([MODE1, oldmode]))
+#        sleep(5)
+#        i2c.write(self.address, bytearray([MODE1, oldmode | 0x80]))
 
     def set_pwm(self, channel, on, off):
         """Sets a single PWM channel."""
         if on is None or off is None:
             i2c.write(self.address, bytearray([LED0_ON_L+4*channel])) # write register we want to read from first
             data = i2c.read(self.address, 4)
-            return ustruct.unpack('<HH', data)
+            return unpack('<HH', data)
         i2c.write(self.address, bytearray([LED0_ON_L+4*channel, on & 0xFF]))
         i2c.write(self.address, bytearray([LED0_ON_H+4*channel, on >> 8]))
         i2c.write(self.address, bytearray([LED0_OFF_L+4*channel, off & 0xFF]))
@@ -106,24 +107,24 @@ class PCA9685(object):
         i2c.write(self.address, bytearray([ALL_LED_OFF_L, off & 0xFF]))
         i2c.write(self.address, bytearray([ALL_LED_OFF_H, off >> 8]))
 
-    def duty(self, index, value=None, invert=False):
-        if value is None:
-            pwm = self.set_pwm(index)
-            if pwm == (0, 4096):
-                value = 0
-            elif pwm == (4096, 0):
-                value = 4095
-            value = pwm[1]
-            if invert:
-                value = 4095 - value
-            return value
-        if not 0 <= value <= 4095:
-            raise ValueError("Out of range")
-        if invert:
-            value = 4095 - value
-        if value == 0:
-            self.set_pwm(index, 0, 4096)
-        elif value == 4095:
-            self.set_pwm(index, 4096, 0)
-        else:
-            self.set_pwm(index, 0, value)
+#    def duty(self, index, value=None, invert=False):
+#        if value is None:
+#            pwm = self.set_pwm(index)
+#            if pwm == (0, 4096):
+#                value = 0
+#            elif pwm == (4096, 0):
+#                value = 4095
+#            value = pwm[1]
+#            if invert:
+#                value = 4095 - value
+#            return value
+#        if not 0 <= value <= 4095:
+#            raise ValueError("Out of range")
+#        if invert:
+#            value = 4095 - value
+#        if value == 0:
+#            self.set_pwm(index, 0, 4096)
+#        elif value == 4095:
+#            self.set_pwm(index, 4096, 0)
+#        else:
+#            self.set_pwm(index, 0, value)

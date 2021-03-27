@@ -1,71 +1,95 @@
-import microbit
+from microbit import *
+from machine import time_pulse_us
+from drive import drive
 import neopixel
-from  machine import time_pulse_us
 
-import PCA9685
 
 class ultraSonic:
     def __init__(self):
-        self.trig = microbit.pin14
-        self.echo = microbit.pin15
+        self.trig = pin14
+        self.echo = pin15
         self.trig.write_digital(0)
         self.echo.read_digital()
 
     def getDistance(self):
         self.trig.write_digital(1)
+        sleep(1)
         self.trig.write_digital(0)
         micros = time_pulse_us(self.echo, 1)
         t_echo = micros / 1000000
         dist_cm = (t_echo / 2) * 34300
         return dist_cm
 
-class drive:
+
+
+class ir_detector:
     def __init__(self):
-        self.pwm = PCA9685.PCA9685(microbit.i2c, address=67)
-        self.pwm.set_pwm(0,0,0)
-        self.pwm.set_pwm(2,0,0)
-        self.state=0
+        self.left = pin2
+        self.right = pin11
+        self.left.read_digital()
+        self.right.read_digital()
+        self.left.set_pull(0)
+        self.right.set_pull(0)
+    
+    def detectRight(self):
+        return self.right.read_digital() == 0
 
-    def stop(self):
-        if(self.state != 0):
-            self.pwm.set_pwm(1,0,0)
-            self.pwm.set_pwm(3,0,0)
-            self.state=0
-    def go(self):
-        if(self.state != 1):
-            self.pwm.set_pwm(1,0,3000)
-            self.pwm.set_pwm(3,0,3000)
-            self.state=1
-   
+    def detectLeft(self):
+        return self.left.read_digital() == 0
 
-    def forward(self, duration=None):
-        self.pwm.set_pwm(0,0,0)
-        self.pwm.set_pwm(2,0,0)
-        self.pwm.set_pwm(1,0,3000)
-        self.pwm.set_pwm(3,0,3000)
-        if duration is not None:
-            microbit.sleep(duration)
-            self.pwm.set_pwm(1,0,0)
-            self.pwm.set_pwm(3,0,0)
-        else:
-            self.state=1
+class timer:
+    def __init__(self):
+        self.runtime=running_time()
 
-            
+    def reset(self):
+        self.runtime=running_time()
+
+    def getDelay(self):
+        return running_time() - self.runtime
+
 
 
 meas = ultraSonic()
+prox = ir_detector()
 move = drive()
-move.forward(100)
+move.setSpeed(1,1)
+move.setDirection(1,1)
+move.update_speed()
+move.update_direction()
+
+pixel = neopixel.NeoPixel(pin5,18)
+
+delayCounter = timer()
+
+dist = 20
 
 while True:
-    dist = meas.getDistance()
-    #microbit.display.scroll(int(dist))
-    #microbit.sleep (100)
+    #dist = meas.getDistance()
+    #display.scroll(int(dist))
     if(dist > 15):
         move.go()
+        #delayCounter.reset()
     else:
         move.stop()
+        delayCounter.reset()
+
+    if(prox.detectRight()):
+        move.turn(0)
+        delayCounter.reset()
+    elif(prox.detectLeft()):
+        move.turn(1)
+        delayCounter.reset()
     
+    accel = abs(accelerometer.get_z())
+    pixel.clear()
+    pixel[int(accel * 17 / 2048)] = (0, 255, 0)
+    pixel.show()
+    if(delayCounter.getDelay() > 600):
+        if(accel > 1000):
+            move.turn(0)
+            move.turn(0)
+            delayCounter.reset()
+        
     
     
     
