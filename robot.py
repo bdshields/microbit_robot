@@ -13,7 +13,6 @@ class ultraSonic:
 
     def getDistance(self):
         self.trig.write_digital(1)
-        sleep(1)
         self.trig.write_digital(0)
         micros = time_pulse_us(self.echo, 1)
         t_echo = micros / 1000000
@@ -49,47 +48,36 @@ class timer:
 
 
 
+
 meas = ultraSonic()
 prox = ir_detector()
 move = drive()
-move.setSpeed(1,1)
-move.setDirection(1,1)
-move.update_speed()
-move.update_direction()
-
+rotate_dir = 1
 pixel = neopixel.NeoPixel(pin5,18)
 
 delayCounter = timer()
 
 dist = 20
 
-while True:
-    #dist = meas.getDistance()
-    #display.scroll(int(dist))
-    if(dist > 15):
-        move.go()
-        #delayCounter.reset()
-    else:
-        move.stop()
-        delayCounter.reset()
 
-    if(prox.detectRight()):
-        move.turn(0)
-        delayCounter.reset()
-    elif(prox.detectLeft()):
-        move.turn(1)
-        delayCounter.reset()
-    
-    accel = abs(accelerometer.get_z())
-    pixel.clear()
-    pixel[int(accel * 17 / 2048)] = (0, 255, 0)
-    pixel.show()
-    if(delayCounter.getDelay() > 600):
-        if(accel > 1000):
-            move.turn(0)
-            move.turn(0)
-            delayCounter.reset()
-        
-    
-    
-    
+def rotate_stop():
+    if meas.getDistance() > 60:
+        return True
+    else:
+        return False
+
+move.go()
+
+while True:
+
+    if meas.getDistance() < 30:
+        move.rotate(rotate_dir * 180, rotate_stop)
+        rotate_dir *= -1
+
+    if prox.detectLeft():
+        move.rotate(15)
+        rotate_dir = 1
+    elif prox.detectRight():
+        move.rotate(-15)
+        rotate_dir = -1
+
