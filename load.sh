@@ -1,6 +1,6 @@
 #!/bin/bash
 
-modules=("PCA9685" "drive")
+modules=("PCA9685" "drive" "RGBled" "detect")
 main="robot.py"
 
 CROSS="../micropython/mpy-cross/mpy-cross"

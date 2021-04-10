@@ -1,4 +1,4 @@
-from microbit import *
+from microbit import sleep
 
 MAX_SPEED = 4095
 
@@ -24,9 +24,8 @@ def limit(value, min, max):
     return value
 
 class drive:
-    def __init__(self):
-        from PCA9685 import PCA9685
-        self.pwm = PCA9685(i2c, address=67)
+    def __init__(self, pwm):
+        self.pwm = pwm
         self.state=0
         self.pwm.set_pwm(LEFT_DIR,0,FORWARDS)
         self.pwm.set_pwm(RIGHT_DIR,0,FORWARDS)
